@@ -7,11 +7,11 @@ A modern, responsive Flutter E-Commerce application built as part of the **EraaS
 ## 📱 App Screenshots
 
 | Splash Screen | Login Screen | Sign Up Screen |
-|:---:|:---:|:---:|
+|![Splash Screen](assets/images/splash.png)|![Login Screen](assets/images/login.png)|![Sign Up Screen](assets/images/sign_up.png)|
 | White splash branding with asset logo | User authentication & validation | Form validation & account creation |
 
-| Home Screen | Categories Filter | Notifications Demo |
-|:---:|:---:|:---:|
+| Home Screen | Cart Screen | Favorites Screen | Account Screen |
+|![Home Screen](assets/images/home.png)|![Cart Screen](assets/images/cart.png)|![Favorites Screen](assets/images/favorite.png)|![Account Screen](assets/images/account.png)|
 | BLoC reactive grid & banners | Slug-based category filter chips | Immediate & scheduled (5s) alerts |
 
 ---
