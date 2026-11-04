@@ -1,0 +1,40 @@
+class CategoryModel {
+  final int? id;
+  final String name;
+  final String slug;
+  final String? image;
+
+  CategoryModel({
+    this.id,
+    required this.name,
+    required this.slug,
+    this.image,
+  });
+
+  factory CategoryModel.fromJson(dynamic json) {
+    if (json is String) {
+      return CategoryModel(name: json, slug: json);
+    }
+    if (json is Map<String, dynamic>) {
+      final nameVal = json['name']?.toString() ?? json['slug']?.toString() ?? '';
+      final slugVal = json['slug']?.toString() ?? json['name']?.toString() ?? '';
+      return CategoryModel(
+        id: json['id'] as int?,
+        name: nameVal,
+        slug: slugVal,
+        image: json['image'] as String?,
+      );
+    }
+    final str = json?.toString() ?? '';
+    return CategoryModel(name: str, slug: str);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'name': name,
+      'slug': slug,
+      if (image != null) 'image': image,
+    };
+  }
+}
