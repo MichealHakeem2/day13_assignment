@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopping_app/core/database/sqflite_helper.dart';
+import 'package:sqflite/sqflite.dart';
 
 class CacheHelper {
   static String? token;
@@ -35,18 +35,28 @@ class CacheHelper {
       if (userEmail != null) await prefs.setString('email', userEmail!);
     } catch (_) {}
 
-    if (!kIsWeb) {
-      try {
-        final db = await SqfliteHelper.instance.database;
-        await db.delete('users');
-        await db.insert('users', {
+    try {
+      final db = await SqfliteHelper.instance.database;
+      await db.delete('users');
+      await db.insert('users', {
+        'name': userName ?? '',
+        'email': userEmail ?? '',
+        'phone': '',
+        'token': userToken,
+      });
+      await db.insert(
+        'user_profile',
+        {
+          'id': 'current',
           'name': userName ?? '',
           'email': userEmail ?? '',
           'phone': '',
-          'token': userToken,
-        });
-      } catch (_) {}
-    }
+          'address': '',
+          'image': '',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (_) {}
   }
 
   static Future<void> _clearPersistedToken() async {
@@ -57,12 +67,13 @@ class CacheHelper {
       await prefs.remove('email');
     } catch (_) {}
 
-    if (!kIsWeb) {
-      try {
-        final db = await SqfliteHelper.instance.database;
-        await db.delete('users');
-      } catch (_) {}
-    }
+    try {
+      final db = await SqfliteHelper.instance.database;
+      await db.delete('users');
+      await db.delete('user_profile');
+      await db.delete('cart');
+      await db.delete('favorites');
+    } catch (_) {}
   }
 
   static Future<void> loadTokenFromStorage() async {
@@ -74,16 +85,14 @@ class CacheHelper {
       if (token != null && token!.isNotEmpty) return;
     } catch (_) {}
 
-    if (!kIsWeb) {
-      try {
-        final db = await SqfliteHelper.instance.database;
-        final results = await db.query('users', limit: 1);
-        if (results.isNotEmpty) {
-          token = results.first['token'] as String?;
-          userName = results.first['name'] as String?;
-          userEmail = results.first['email'] as String?;
-        }
-      } catch (_) {}
-    }
+    try {
+      final db = await SqfliteHelper.instance.database;
+      final results = await db.query('users', limit: 1);
+      if (results.isNotEmpty) {
+        token = results.first['token'] as String?;
+        userName = results.first['name'] as String?;
+        userEmail = results.first['email'] as String?;
+      }
+    } catch (_) {}
   }
 }

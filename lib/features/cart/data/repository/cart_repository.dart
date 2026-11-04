@@ -32,10 +32,10 @@ class CartRepository {
       final remoteItems = await remoteDataSource.getCart();
       if (remoteItems.isNotEmpty) {
         await localDataSource.cacheCartItems(remoteItems);
-        await refreshCartCount();
-        return remoteItems;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('CartRepository getCart error: $e');
+    }
 
     final localItems = await localDataSource.getCart();
     await refreshCartCount();
@@ -53,6 +53,12 @@ class CartRepository {
 
     await localDataSource.addToCart(item);
     await refreshCartCount();
+
+    try {
+      await remoteDataSource.addToCart(product.id);
+    } catch (e) {
+      debugPrint('CartRepository addToCart error: $e');
+    }
   }
 
   Future<void> updateQuantity(int productId, int quantity) async {
@@ -63,11 +69,23 @@ class CartRepository {
   Future<void> deleteFromCart(int productId) async {
     await localDataSource.deleteFromCart(productId);
     await refreshCartCount();
+
+    try {
+      await remoteDataSource.deleteFromCart(productId);
+    } catch (e) {
+      debugPrint('CartRepository deleteFromCart error: $e');
+    }
   }
 
   Future<void> clearCart() async {
+    final items = await localDataSource.getCart();
     await localDataSource.clearCart();
     await refreshCartCount();
+
+    for (var item in items) {
+      try {
+        await remoteDataSource.deleteFromCart(item.productId);
+      } catch (_) {}
+    }
   }
 }
-

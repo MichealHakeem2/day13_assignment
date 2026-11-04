@@ -29,6 +29,24 @@ class CategoryModel {
     return CategoryModel(name: str, slug: str);
   }
 
+  factory CategoryModel.fromMap(Map<String, dynamic> map) {
+    return CategoryModel(
+      id: map['id'] as int?,
+      name: map['name'] as String? ?? '',
+      slug: map['slug'] as String? ?? map['name'] as String? ?? '',
+      image: map['image'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      if (id != null) 'id': id,
+      'name': name,
+      'slug': slug,
+      'image': image ?? '',
+    };
+  }
+
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,

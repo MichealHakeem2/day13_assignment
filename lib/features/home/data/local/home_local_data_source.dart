@@ -1,4 +1,5 @@
 import 'package:shopping_app/core/database/sqflite_helper.dart';
+import 'package:shopping_app/features/home/data/models/category_model.dart';
 import 'package:shopping_app/features/home/data/models/product_model.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -7,6 +8,25 @@ class HomeLocalDataSource {
 
   HomeLocalDataSource({SqfliteHelper? dbHelper})
       : dbHelper = dbHelper ?? SqfliteHelper.instance;
+
+  Future<void> cacheCategories(List<CategoryModel> categories) async {
+    final db = await dbHelper.database;
+    final batch = db.batch();
+    for (var cat in categories) {
+      batch.insert(
+        'categories',
+        cat.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<List<CategoryModel>> getCachedCategories() async {
+    final db = await dbHelper.database;
+    final results = await db.query('categories');
+    return results.map((map) => CategoryModel.fromMap(map)).toList();
+  }
 
   Future<void> cacheProducts(List<ProductModel> products) async {
     final db = await dbHelper.database;

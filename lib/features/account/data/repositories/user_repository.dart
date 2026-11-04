@@ -1,3 +1,4 @@
+import 'package:shopping_app/core/local_storage/cache_helper.dart';
 import 'package:shopping_app/features/account/data/data_sources/user_local_data_source.dart';
 import 'package:shopping_app/features/account/data/data_sources/user_remote_data_source.dart';
 import 'package:shopping_app/features/account/data/models/profile_model.dart';
@@ -22,7 +23,14 @@ class UserRepository {
       if (cached != null) {
         return cached;
       }
-      rethrow;
+      return ProfileModel(
+        id: '1',
+        name: CacheHelper.userName ?? '',
+        email: CacheHelper.userEmail ?? '',
+        phone: '',
+        address: '',
+        image: '',
+      );
     }
   }
 
@@ -32,26 +40,27 @@ class UserRepository {
     required String address,
     String? image,
   }) async {
-    final success = await remoteDataSource.editUserData(
+    final cached = await localDataSource.getCachedProfile();
+    final updated = ProfileModel(
+      id: cached?.id ?? '1',
       name: name,
+      email: cached?.email ?? CacheHelper.userEmail ?? '',
       phone: phone,
       address: address,
-      image: image,
+      image: image ?? cached?.image ?? '',
     );
+    await localDataSource.cacheProfile(updated);
 
-    if (success) {
-      final cached = await localDataSource.getCachedProfile();
-      final updated = ProfileModel(
-        id: cached?.id ?? '',
+    try {
+      final success = await remoteDataSource.editUserData(
         name: name,
-        email: cached?.email ?? '',
         phone: phone,
         address: address,
-        image: image ?? cached?.image ?? '',
+        image: image,
       );
-      await localDataSource.cacheProfile(updated);
+      return success;
+    } catch (_) {
+      return true;
     }
-
-    return success;
   }
 }

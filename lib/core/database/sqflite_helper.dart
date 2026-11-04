@@ -20,7 +20,7 @@ class SqfliteHelper {
       return await databaseFactoryFfiWebNoWebWorker.openDatabase(
         inMemoryDatabasePath,
         options: OpenDatabaseOptions(
-          version: 1,
+          version: 2,
           onCreate: _createDB,
           onOpen: _onOpenDB,
           onUpgrade: (db, oldVersion, newVersion) async {
@@ -35,7 +35,7 @@ class SqfliteHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
       onOpen: _onOpenDB,
       onUpgrade: (db, oldVersion, newVersion) async {
@@ -43,6 +43,7 @@ class SqfliteHelper {
       },
     );
   }
+
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users (
@@ -66,6 +67,15 @@ class SqfliteHelper {
         rating REAL,
         stock INTEGER,
         isFavorite INTEGER DEFAULT 0
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE,
+        slug TEXT,
+        image TEXT
       )
     ''');
 

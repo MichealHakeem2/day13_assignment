@@ -28,11 +28,17 @@ class FavoriteRemoteDataSource {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final data = jsonDecode(response.body);
       if (data is Map && data.containsKey('list') && data['list'] is List) {
-        return (data['list'] as List).map((e) {
-          final p = ProductModel.fromJson(e as Map<String, dynamic>);
-          p.isFavorite = true;
-          return p;
-        }).toList();
+        final List<ProductModel> list = [];
+        for (var item in data['list']) {
+          if (item is Map<String, dynamic>) {
+            final p = ProductModel.fromJson(item);
+            p.isFavorite = true;
+            list.add(p);
+          } else if (item is int) {
+            list.add(ProductModel(id: item, title: 'Product $item', price: 0.0, image: '', isFavorite: true));
+          }
+        }
+        return list;
       }
       return [];
     } else {
@@ -42,7 +48,7 @@ class FavoriteRemoteDataSource {
 
   Future<bool> addFavorite(int productId) async {
     final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.addFavorite}');
-    final body = jsonEncode({'productId': productId.toString()});
+    final body = jsonEncode({'productId': productId});
 
     try {
       final response = await client.post(url, headers: _buildHeaders(), body: body);
@@ -55,7 +61,7 @@ class FavoriteRemoteDataSource {
 
   Future<bool> deleteFavorite(int productId) async {
     final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.deleteFavorite}');
-    final body = jsonEncode({'productId': productId.toString()});
+    final body = jsonEncode({'productId': productId});
 
     try {
       final request = http.Request('DELETE', url);
@@ -69,4 +75,3 @@ class FavoriteRemoteDataSource {
     }
   }
 }
-

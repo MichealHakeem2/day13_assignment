@@ -25,6 +25,19 @@ class HomeDataSourceImp implements HomeDataSourceInterface {
 
   @override
   Future<List<CategoryModel>> getAllCategories() async {
+    try {
+      final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.categories}');
+      final response = await client.get(url, headers: _buildHeaders());
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body);
+        if (data is Map && data.containsKey('list') && data['list'] is List) {
+          return (data['list'] as List)
+              .map((item) => CategoryModel.fromJson(item))
+              .toList();
+        }
+      }
+    } catch (_) {}
+
     final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.categoriesNames}');
     final response = await client.get(url, headers: _buildHeaders());
 
@@ -134,4 +147,3 @@ class HomeDataSourceImp implements HomeDataSourceInterface {
     }
   }
 }
-

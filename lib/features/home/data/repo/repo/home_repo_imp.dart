@@ -18,8 +18,18 @@ class HomeRepoImp implements HomeRepoInterface {
   @override
   Future<List<CategoryModel>> getAllCategories() async {
     try {
-      return await remoteDataSource.getAllCategories();
+      final remoteCategories = await remoteDataSource.getAllCategories();
+      if (remoteCategories.isNotEmpty) {
+        await localDataSource.cacheCategories(remoteCategories);
+      }
+      return remoteCategories;
     } catch (_) {
+      try {
+        final localCategories = await localDataSource.getCachedCategories();
+        if (localCategories.isNotEmpty) {
+          return localCategories;
+        }
+      } catch (_) {}
       return [];
     }
   }
@@ -87,7 +97,11 @@ class HomeRepoImp implements HomeRepoInterface {
     int limit = 10,
   }) async {
     try {
-      return await remoteDataSource.searchProducts(query, skip: skip, limit: limit);
+      final remoteProducts = await remoteDataSource.searchProducts(query, skip: skip, limit: limit);
+      if (remoteProducts.isNotEmpty) {
+        await localDataSource.cacheProducts(remoteProducts);
+      }
+      return remoteProducts;
     } catch (_) {
       return await localDataSource.searchCachedProducts(query);
     }
@@ -101,4 +115,3 @@ class HomeRepoImp implements HomeRepoInterface {
 }
 
 typedef HomeRepository = HomeRepoImp;
-

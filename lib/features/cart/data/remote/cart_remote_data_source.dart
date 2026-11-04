@@ -28,9 +28,21 @@ class CartRemoteDataSource {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final data = jsonDecode(response.body);
       if (data is Map && data.containsKey('list') && data['list'] is List) {
-        return (data['list'] as List)
-            .map((e) => CartItemModel.fromJson(e as Map<String, dynamic>))
-            .toList();
+        final List<CartItemModel> list = [];
+        for (var item in data['list']) {
+          if (item is Map<String, dynamic>) {
+            list.add(CartItemModel.fromJson(item));
+          } else if (item is int) {
+            list.add(CartItemModel(
+              productId: item,
+              title: 'Product $item',
+              price: 0.0,
+              image: '',
+              quantity: 1,
+            ));
+          }
+        }
+        return list;
       }
       return [];
     } else {
@@ -40,7 +52,7 @@ class CartRemoteDataSource {
 
   Future<bool> addToCart(int productId) async {
     final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.addCart}');
-    final body = jsonEncode({'productId': productId.toString()});
+    final body = jsonEncode({'productId': productId});
 
     try {
       final response = await client.post(url, headers: _buildHeaders(), body: body);
@@ -53,7 +65,7 @@ class CartRemoteDataSource {
 
   Future<bool> deleteFromCart(int productId) async {
     final url = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.deleteCart}');
-    final body = jsonEncode({'productId': productId.toString()});
+    final body = jsonEncode({'productId': productId});
 
     try {
       final request = http.Request('DELETE', url);
@@ -67,4 +79,3 @@ class CartRemoteDataSource {
     }
   }
 }
-

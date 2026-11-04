@@ -27,7 +27,10 @@ class ProductModel {
     this.isFavorite = false,
   });
 
-  factory ProductModel.fromJson(Map<String, dynamic> json) {
+  factory ProductModel.fromJson(Map<String, dynamic> rawJson) {
+    final json = rawJson['product'] is Map<String, dynamic>
+        ? rawJson['product'] as Map<String, dynamic>
+        : rawJson;
     String img = '';
     if (json['thumbnail'] != null && json['thumbnail'].toString().isNotEmpty) {
       img = json['thumbnail'].toString();

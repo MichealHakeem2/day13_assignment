@@ -27,10 +27,10 @@ class FavoriteRepository {
         for (var p in remoteList) {
           await localDataSource.addFavorite(p);
         }
-        await refreshFavoriteIds();
-        return remoteList;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('FavoriteRepository getFavorites error: $e');
+    }
 
     final localList = await localDataSource.getFavorites();
     await refreshFavoriteIds();
@@ -47,13 +47,22 @@ class FavoriteRepository {
       await localDataSource.deleteFavorite(product.id);
       product.isFavorite = false;
       await refreshFavoriteIds();
+      try {
+        await remoteDataSource.deleteFavorite(product.id);
+      } catch (e) {
+        debugPrint('FavoriteRepository deleteFavorite error: $e');
+      }
       return false;
     } else {
       await localDataSource.addFavorite(product);
       product.isFavorite = true;
       await refreshFavoriteIds();
+      try {
+        await remoteDataSource.addFavorite(product.id);
+      } catch (e) {
+        debugPrint('FavoriteRepository addFavorite error: $e');
+      }
       return true;
     }
   }
 }
-
