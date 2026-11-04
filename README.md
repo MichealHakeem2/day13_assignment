@@ -1,6 +1,6 @@
 # Shopping App with State Management (Repository Pattern & BLoC / Cubit) 🛒
 
-A modern, responsive Flutter E-Commerce application built as part of the **EraaSoft Flutter Course (Day 13)**. This project demonstrates clean state management using **Flutter BLoC (Cubit)**, the **Repository Pattern** with interfaces, feature-based architecture, live REST API integration, reactive UI states (Loading, Success, Error), local notifications with timezones, offline SQLite caching, and persistent bottom navigation.
+A modern, responsive Flutter E-Commerce application built as part of the **EraaSoft Flutter Course (Day 13)**. This project demonstrates clean state management using **Flutter BLoC (Cubit)**, the **Repository Pattern** with interfaces, feature-based architecture, full remote REST API integration with offline SQLite caching across every feature, reactive UI states, local notifications with timezones, and persistent bottom navigation.
 
 ---
 
@@ -12,26 +12,30 @@ A modern, responsive Flutter E-Commerce application built as part of the **EraaS
 
 | Home Screen | Cart Screen | Favorites Screen | Account Screen |
 |![Home Screen](assets/images/home.png)|![Cart Screen](assets/images/cart.png)|![Favorites Screen](assets/images/favorite.png)|![Account Screen](assets/images/account.png)|
-| BLoC reactive grid & banners | Slug-based category filter chips | Immediate & scheduled (5s) alerts |
+| BLoC reactive grid & category chips | SQLite + API synced cart | SQLite + API synced favorites | Remote profile with offline fallback |
 
 ---
 
 ## ✨ Features
 
-- **State Management with BLoC (Cubit):** Clean separation of UI and business logic using `flutter_bloc` with `HomeCubit` and `HomeState`.
-- **Repository Pattern Architecture:** Complete data abstraction separating remote REST APIs, local SQLite caching, and presentation layers (`HomeRepoInterface`, `HomeRepoImp`, `HomeDataSourceInterface`, `HomeDataSourceImp`).
+- **State Management with BLoC (Cubit):** Clean separation of UI and business logic using `flutter_bloc` with `HomeCubit`, `LoginCubit`, and `RegisterCubit`.
+- **Repository Pattern Architecture:** Full data abstraction separating remote REST APIs, local SQLite caching, and presentation layers across every feature.
+- **Full Remote API + Local Sync:** Every feature (products, categories, cart, favorites, user profile, auth) posts and fetches data from the backend API and synchronizes with the local SQLite database.
+- **Offline Fallback:** When the network is unavailable, the app serves products, categories, cart, favorites, and user profile from SQLite automatically.
 - **Reactive UI States:**
   - **Loading:** Smooth circular progress indicators while fetching data.
   - **Success:** Displays categories horizontally and products in a responsive grid.
   - **Error & Retry:** Clean error UI with a retry mechanism on failure.
 - **Infinite Scroll Pagination:** Automatically loads more products as the user scrolls toward the bottom using a `ScrollController` listener.
-- **Horizontal Categories:** Scrollable category chips with active styling and slug-based product filtering.
+- **Horizontal Categories:** Scrollable category chips with active styling and slug-based product filtering, cached locally after first fetch.
+- **Cart Management:** Add, remove, and update quantities with live badge counters. All cart changes sync to `POST /user/addCart` and `DELETE /user/deleteCart` with local SQLite as the source of truth.
+- **Favorites Management:** Instant toggle with heart icon. All changes sync to `POST /user/addFavorite` and `DELETE /user/deleteFavorite` with local SQLite as the source of truth.
+- **User Profile:** Loads from `GET /portfoilo/userData`, cached to SQLite. Profile edits POST to the backend and are immediately reflected in local cache.
+- **Authentication & Persistence:** Secure login (`POST /auth/signIn`) and registration (`POST /auth/signUp`) with JWT tokens stored in `shared_preferences` and SQLite. Logout clears all local tables.
 - **Reusable Widgets:** Modular components including `CategoryItem`, `ProductItem` (with `CachedNetworkImage`), `CustomElevatedButton`, and `CustomTextFormField`.
-- **Bottom Navigation Shell (`AppSection`):** Layout shell hosting 4 main tabs (`HomeScreen`, `CartScreen`, `FavoriteScreen`, `AccountScreen`) with active icon coloring.
-- **Cart & Favorites Management:** Client-managed shopping cart with badge counters and instant favorite toggle.
-- **Local Notifications & Timezones:** Immediate local notifications and timezone-aware 5-second background scheduled notifications using `flutter_local_notifications` and `timezone`.
-- **Offline SQLite Caching:** Caches products locally using `sqflite` (with WebAssembly support on web) for offline access.
-- **Authentication & Persistence:** Secure user registration, login, and persistent session tokens stored with `shared_preferences`.
+- **Bottom Navigation Shell (`AppSection`):** Layout shell hosting 4 main tabs with active icon coloring.
+- **Local Notifications & Timezones:** Immediate local notifications and timezone-aware 5-second scheduled notifications using `flutter_local_notifications` and `timezone`.
+- **Web SQLite Support:** SQLite runs on Flutter Web via WebAssembly (`sqflite_common_ffi_web`).
 
 ---
 
@@ -45,9 +49,9 @@ lib/
 │   │   ├── app_assets.dart
 │   │   └── app_colors.dart
 │   ├── database/
-│   │   └── sqflite_helper.dart
+│   │   └── sqflite_helper.dart       ← Tables: users, products, categories, cart, favorites, user_profile
 │   ├── local_storage/
-│   │   └── cache_helper.dart
+│   │   └── cache_helper.dart         ← Token persistence + logout cleanup
 │   ├── network/
 │   │   └── api_result.dart
 │   ├── routes/
@@ -64,32 +68,69 @@ lib/
 ├── features/
 │   ├── account/
 │   │   ├── data/
+│   │   │   ├── data_sources/
+│   │   │   │   ├── user_remote_data_source.dart
+│   │   │   │   └── user_local_data_source.dart
+│   │   │   ├── models/
+│   │   │   │   └── profile_model.dart
+│   │   │   └── repositories/
+│   │   │       └── user_repository.dart
 │   │   └── presentation/
 │   │       └── view/
 │   │           └── account_screen.dart
 │   ├── app_section/
-│   │   ├── app_section.dart
 │   │   └── screens/
 │   │       └── app_section.dart
 │   ├── auth/
 │   │   ├── data/
+│   │   │   ├── api/
+│   │   │   │   └── auth_api.dart
+│   │   │   ├── local/
+│   │   │   │   └── auth_local_data_source.dart
+│   │   │   ├── models/
+│   │   │   ├── remote/
+│   │   │   │   └── auth_remote_data_source.dart
+│   │   │   └── repository/
+│   │   │       └── auth_repository.dart
 │   │   └── presentation/
 │   │       ├── view/
 │   │       │   ├── login_view.dart
 │   │       │   └── register_view.dart
 │   │       └── view_model/
+│   │           ├── login/
+│   │           │   ├── login_cubit.dart
+│   │           │   └── login_state.dart
+│   │           └── register/
+│   │               ├── register_cubit.dart
+│   │               └── register_state.dart
 │   ├── cart/
 │   │   ├── data/
+│   │   │   ├── local/
+│   │   │   │   └── cart_local_data_source.dart
+│   │   │   ├── models/
+│   │   │   │   └── cart_item_model.dart
+│   │   │   ├── remote/
+│   │   │   │   └── cart_remote_data_source.dart
+│   │   │   └── repository/
+│   │   │       └── cart_repository.dart
 │   │   └── presentation/
 │   │       └── view/
 │   │           └── cart_screen.dart
 │   ├── favorite/
 │   │   ├── data/
+│   │   │   ├── local/
+│   │   │   │   └── favorite_local_data_source.dart
+│   │   │   ├── remote/
+│   │   │   │   └── favorite_remote_data_source.dart
+│   │   │   └── repository/
+│   │   │       └── favorite_repository.dart
 │   │   └── presentation/
 │   │       └── view/
 │   │           └── favorite_screen.dart
 │   ├── home/
 │   │   ├── data/
+│   │   │   ├── local/
+│   │   │   │   └── home_local_data_source.dart
 │   │   │   ├── models/
 │   │   │   │   ├── category_model.dart
 │   │   │   │   └── product_model.dart
@@ -122,16 +163,19 @@ lib/
 
 ## 🛠️ Tech Stack & Dependencies
 
-- **Framework:** [Flutter](https://flutter.dev/) (SDK ^3.13.2)
-- **Language:** [Dart](https://dart.dev/)
-- **State Management:** [flutter_bloc](https://pub.dev/packages/flutter_bloc)
-- **HTTP Client:** [http](https://pub.dev/packages/http)
-- **Local Database:** [sqflite](https://pub.dev/packages/sqflite) & [sqflite_common_ffi_web](https://pub.dev/packages/sqflite_common_ffi_web)
-- **Key-Value Persistence:** [shared_preferences](https://pub.dev/packages/shared_preferences)
-- **Local Notifications:** [flutter_local_notifications](https://pub.dev/packages/flutter_local_notifications)
-- **Timezone Support:** [timezone](https://pub.dev/packages/timezone) & [flutter_timezone](https://pub.dev/packages/flutter_timezone)
-- **Image Caching:** [cached_network_image](https://pub.dev/packages/cached_network_image)
-- **REST API:** [Supermarket Backend API](https://supermarket-dan1.onrender.com/api/v1)
+| Package | Purpose |
+|---|---|
+| [Flutter](https://flutter.dev/) | Framework (SDK ^3.13.2) |
+| [Dart](https://dart.dev/) | Language |
+| [flutter_bloc](https://pub.dev/packages/flutter_bloc) | State management (Cubit) |
+| [http](https://pub.dev/packages/http) | REST API calls |
+| [sqflite](https://pub.dev/packages/sqflite) | Local SQLite database |
+| [sqflite_common_ffi_web](https://pub.dev/packages/sqflite_common_ffi_web) | SQLite on Flutter Web (WASM) |
+| [shared_preferences](https://pub.dev/packages/shared_preferences) | Token & session persistence |
+| [flutter_local_notifications](https://pub.dev/packages/flutter_local_notifications) | Local & scheduled notifications |
+| [timezone](https://pub.dev/packages/timezone) | Timezone-aware scheduling |
+| [cached_network_image](https://pub.dev/packages/cached_network_image) | Cached product images |
+| [Supermarket API](https://supermarket-dan1.onrender.com/api/v1) | Backend REST API |
 
 ---
 
@@ -172,7 +216,45 @@ lib/
 
 ---
 
-## 📱 State Management & Repository Pattern Flow
+## 🔄 Data Flow: Remote API ↔ Local SQLite
+
+```text
+[UI Screen]
+     │
+     ▼ (user action or screen load)
+[Cubit / Repository]
+     │
+     ├──► [Remote Data Source]  ──► POST / GET to REST API
+     │          │
+     │          ▼ (on success)
+     │    [Local Data Source]  ──► Cache result to SQLite
+     │
+     └──► [Local Data Source]  ──► Serve from SQLite (offline fallback)
+```
+
+**Feature-by-feature API endpoints:**
+
+| Feature | Remote Endpoints |
+|---|---|
+| Auth – Login | `POST /auth/signIn` |
+| Auth – Register | `POST /auth/signUp` |
+| Products | `GET /home/products` |
+| Product Detail | `GET /home/products/:id` |
+| Products by Category | `GET /home/products/category/:name` |
+| Search | `POST /home/productsFilter` |
+| Categories | `GET /home/categories` |
+| Cart – Get | `GET /user/getCart` |
+| Cart – Add | `POST /user/addCart` |
+| Cart – Delete | `DELETE /user/deleteCart` |
+| Favorites – Get | `GET /user/getFavorite` |
+| Favorites – Add | `POST /user/addFavorite` |
+| Favorites – Delete | `DELETE /user/deleteFavorite` |
+| Profile – Get | `GET /portfoilo/userData` |
+| Profile – Edit | `POST /portfoilo/editUserData` |
+
+---
+
+## 📱 State Management Flow (HomeCubit)
 
 ```text
 [UI: HomeScreen (BlocBuilder)]
